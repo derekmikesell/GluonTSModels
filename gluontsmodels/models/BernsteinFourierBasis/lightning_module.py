@@ -17,7 +17,7 @@ import torch
 from gluonts.core.component import validated
 from gluonts.itertools import select
 
-from module import BasisModel
+from .module import BasisModel
 
 
 class BasisLightningModule(pl.LightningModule):

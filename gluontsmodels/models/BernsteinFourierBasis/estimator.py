@@ -51,7 +51,7 @@ def target_transformation_length(
 ) -> int:
     return target.shape[-1] + (0 if is_train else pred_length)
 
-from lightning_module import BasisLightningModule
+from .lightning_module import BasisLightningModule
 
 PREDICTION_INPUT_NAMES = ["past_target", "past_observed_values", "past_feat_dynamic_real"]
 
