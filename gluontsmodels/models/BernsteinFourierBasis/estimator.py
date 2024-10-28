@@ -32,6 +32,7 @@ from gluonts.transform import (
     TestSplitSampler,
     ExpectedNumInstanceSampler,
     SelectFields,
+    AddTimeFeatures,
     VstackFeatures,
 )
 from gluonts.time_feature import week_of_year_index
@@ -93,7 +94,8 @@ class BasisEstimator(PyTorchLightningEstimator):
         Learning rate (default: ``1e-3``).
     weight_decay
         Weight decay regularization parameter (default: ``1e-8``).
-
+    fourier_init
+        Values to init the fourier weights
     distr_output
         Distribution to use to evaluate observations and sample predictions
         (default: StudentTOutput()).
@@ -119,6 +121,10 @@ class BasisEstimator(PyTorchLightningEstimator):
         hidden_dim: int = 64, 
         fourier_v: int = 8,
         max_period: float = 52.18,
+        fourier_init: List[float] = [ 1.000e+00, -1.099e+00, -4.680e-01, -7.300e-02, -1.400e-02,
+       -1.010e-01,  7.200e-02,  7.600e-02, -5.200e-02, -1.000e-03,
+        3.360e-01,  1.220e-01, -4.920e-01,  1.410e-01, -2.240e-01,
+       -9.700e-02, -3.200e-02, -5.900e-02],
         bernstein_v: int = 8,
         num_layers: int = 2, 
         lr: float = 1e-3,
@@ -137,6 +143,8 @@ class BasisEstimator(PyTorchLightningEstimator):
         if trainer_kwargs is not None:
             default_trainer_kwargs.update(trainer_kwargs)
         super().__init__(trainer_kwargs=default_trainer_kwargs)
+        
+        assert len(fourier_init) == 2*(fourier_v+1)
 
         self.prediction_length = prediction_length
         self.context_length = context_length or 10 * prediction_length
@@ -146,6 +154,7 @@ class BasisEstimator(PyTorchLightningEstimator):
         self.hidden_dim = hidden_dim
         self.fourier_v = fourier_v
         self.max_period = max_period
+        self.fourier_init = fourier_init
         self.bernstein_v = bernstein_v
         self.num_layers = num_layers
         
@@ -175,7 +184,13 @@ class BasisEstimator(PyTorchLightningEstimator):
         ) + AddObservedValuesIndicator(
             target_field=FieldName.TARGET,
             output_field=FieldName.OBSERVED_VALUES,
-        ) 
+        ) + AddTimeFeatures(
+            start_field=FieldName.START,
+            target_field=FieldName.TARGET,
+            output_field=FieldName.FEAT_DYNAMIC_REAL,
+            time_features=[week_of_year_index],
+            pred_length=self.prediction_length,
+        )
 
     def create_lightning_module(self) -> pl.LightningModule:
         return BasisLightningModule(
@@ -188,6 +203,7 @@ class BasisEstimator(PyTorchLightningEstimator):
                 "hidden_dim": self.hidden_dim,
                 "fourier_v": self.fourier_v,
                 "max_period": self.max_period,
+                "fourier_init": self.fourier_init,
                 "bernstein_v": self.bernstein_v,
                 "num_layers": self.num_layers,
                 "distr_output": self.distr_output,

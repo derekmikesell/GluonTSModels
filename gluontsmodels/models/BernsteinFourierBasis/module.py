@@ -78,6 +78,7 @@ class BasisModel(nn.Module):
                  hidden_dim, 
                  fourier_v,
                  max_period,
+                 fourier_init,
                  bernstein_v, 
                  prediction_length,
                  context_length,
@@ -89,6 +90,7 @@ class BasisModel(nn.Module):
         super(BasisModel, self).__init__()
         self.input_dim = input_dim
         self.max_period = max_period
+        self.fourier_init = torch.tensor(fourier_init).unsqueeze(0)
         self.context_length = context_length
         self.prediction_length = prediction_length
         self.distr_output = distr_output
@@ -147,7 +149,7 @@ class BasisModel(nn.Module):
         x_reshaped = x.reshape(-1, T)
 
         # Generate Fourier coefficients
-        fourier_coeffs = self.fourier_mlp(x_reshaped)
+        fourier_coeffs = self.fourier_mlp(x_reshaped) + self.fourier_init
 
         # Generate Bernstein coefficients and sign
         bernstein_output = self.bernstein_mlp(x_reshaped)
