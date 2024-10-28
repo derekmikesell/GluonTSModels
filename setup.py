@@ -5,8 +5,8 @@ setup(
     version="0.1.0",
     packages=find_packages(exclude=["tests*"]),
     install_requires=[
-        "gluonts=0.13.2",
-        "torch=1.13"
+        "gluonts>=0.13.2",
+        "torch>=1.13"
         # Add your dependencies here, for example:
         # "gluonts>=0.6.0",
         # "numpy>=1.18.0",
